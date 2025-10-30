@@ -194,9 +194,10 @@ def analyze_peaks(frequencies, spl, threshold_db=3):
     else:
         print("  Keine signifikanten Peaks gefunden")
 
-def analyze_fft_resolution(time, pressure):
+def analyze_fft_resolution(time, pressure, freq_exp, spl_exp):
     """
     Analysiert verschiedene FFT-Parameter und deren Einfluss auf die Auflösung
+    Vergleicht mit experimentellen Daten
     """
     print("\n" + "=" * 60)
     print("ANALYSE DER FFT-AUFLÖSUNG")
@@ -215,11 +216,12 @@ def analyze_fft_resolution(time, pressure):
 
     # Verschiedene FFT-Konfigurationen
     configs = [
-        (256, 0.5),   # Kleineres Fenster
+        (256, 0.5),   # Kleineres Fenster mit Überlappung
         (512, 0.5),   # Original (Jaeger)
-        (1024, 0.5),  # Größeres Fenster
+        (1024, 0.5),  # Größeres Fenster mit Überlappung
         (2048, 0.5),  # Noch größeres Fenster
         (4096, 0.75), # Sehr großes Fenster mit mehr Überlappung
+        (n_samples, 0.0), # Einfache FFT ohne Überlappung (ganzes Signal)
     ]
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
@@ -228,42 +230,81 @@ def analyze_fft_resolution(time, pressure):
     pressure_ac = pressure - np.mean(pressure)
 
     for idx, (nperseg, overlap) in enumerate(configs):
-        if nperseg > n_samples:
-            continue
+        if idx == 5:  # Spezialfall: Einfache FFT über ganzes Signal
+            # Einfache FFT ohne Welch-Methode
+            # Verwende nur ein Hanning-Fenster über das gesamte Signal
+            window = signal.windows.hann(n_samples)
+            windowed_signal = pressure_ac * window
 
-        noverlap = int(nperseg * overlap)
-        freq, psd = signal.welch(pressure_ac, fs=fs, window='hann',
-                                 nperseg=nperseg, noverlap=noverlap,
-                                 detrend='linear', scaling='density')
+            # FFT durchführen
+            fft_vals = np.fft.fft(windowed_signal)
+            freq = np.fft.fftfreq(n_samples, d=dt)
 
-        amplitude = np.sqrt(psd * (freq[1] - freq[0]))
-        spl = calculate_spl(amplitude)
+            # Nur positive Frequenzen
+            pos_mask = freq >= 0
+            freq = freq[pos_mask]
+            fft_vals = fft_vals[pos_mask]
 
-        # Berechne theoretische Auflösung
-        freq_resolution = fs / nperseg
-        time_per_segment = nperseg / fs * 1000  # in ms
-        n_segments = (n_samples - noverlap) / (nperseg - noverlap)
+            # Amplitude berechnen (single-sided spectrum)
+            amplitude = 2.0 * np.abs(fft_vals) / n_samples
+            amplitude[0] = amplitude[0] / 2  # DC-Komponente nicht verdoppeln
+
+            spl = calculate_spl(amplitude / np.sqrt(2))  # RMS für SPL
+
+            freq_resolution = fs / n_samples
+            time_per_segment = total_time * 1000  # gesamtes Signal in ms
+            title = f'Einfache FFT (ganzes Signal)\nΔf={freq_resolution:.3f} Hz, N={n_samples}'
+            n_segments = 1
+        else:
+            if nperseg > n_samples:
+                continue
+
+            noverlap = int(nperseg * overlap)
+            freq, psd = signal.welch(pressure_ac, fs=fs, window='hann',
+                                     nperseg=nperseg, noverlap=noverlap,
+                                     detrend='linear', scaling='density')
+
+            amplitude = np.sqrt(psd * (freq[1] - freq[0]))
+            spl = calculate_spl(amplitude)
+
+            # Berechne theoretische Auflösung
+            freq_resolution = fs / nperseg
+            time_per_segment = nperseg / fs * 1000  # in ms
+            n_segments = (n_samples - noverlap) / (nperseg - noverlap)
+            title = f'nperseg={nperseg}, overlap={overlap*100:.0f}%\nΔf={freq_resolution:.1f} Hz, T_seg={time_per_segment:.1f} ms'
 
         ax = axes[idx]
-        ax.plot(freq[freq < 500], spl[freq < 500], linewidth=1.5)
+
+        # Plot experimentelle Daten
+        mask_exp = freq_exp < 500
+        ax.plot(freq_exp[mask_exp], spl_exp[mask_exp], 'r-', alpha=0.5,
+                linewidth=1, label='Experiment')
+
+        # Plot FFT-Ergebnisse
+        mask_sim = freq < 500
+        ax.plot(freq[mask_sim], spl[mask_sim], 'b-', linewidth=1.5,
+                label='FFT Simulation')
+
         ax.set_xlabel('Frequenz [Hz]')
         ax.set_ylabel('SPL [dB]')
-        ax.set_title(f'nperseg={nperseg}, overlap={overlap*100:.0f}%\n'
-                    f'Δf={freq_resolution:.1f} Hz, T_seg={time_per_segment:.1f} ms')
+        ax.set_title(title)
         ax.grid(True, alpha=0.3)
         ax.set_xlim([0, 500])
+        ax.set_ylim([-10, 70])
+        ax.legend(loc='upper right', fontsize=8)
 
-        print(f"\nKonfiguration {idx+1}: nperseg={nperseg}, overlap={overlap*100:.0f}%")
-        print(f"  Frequenzauflösung: {freq_resolution:.2f} Hz")
-        print(f"  Zeit pro Segment: {time_per_segment:.1f} ms")
-        print(f"  Anzahl Segmente (mit Überlappung): ~{n_segments:.0f}")
-        print(f"  Niedrigste auflösbare Frequenz: ~{freq_resolution:.1f} Hz")
+        if idx == 5:
+            print(f"\nKonfiguration {idx+1}: Einfache FFT (ganzes Signal)")
+            print(f"  Frequenzauflösung: {freq_resolution:.3f} Hz")
+            print(f"  Anzahl FFT-Punkte: {n_samples}")
+            print(f"  Keine Überlappung, keine Mittelung")
+        else:
+            print(f"\nKonfiguration {idx+1}: nperseg={nperseg}, overlap={overlap*100:.0f}%")
+            print(f"  Frequenzauflösung: {freq_resolution:.2f} Hz")
+            print(f"  Zeit pro Segment: {time_per_segment:.1f} ms")
+            print(f"  Anzahl Segmente (mit Überlappung): ~{n_segments:.0f}")
 
-    # Lösche unbenutzte Subplots
-    for idx in range(len(configs), len(axes)):
-        fig.delaxes(axes[idx])
-
-    plt.suptitle('Einfluss der FFT-Parameter auf die Spektralauflösung', fontsize=14)
+    plt.suptitle('FFT-Auflösung im Vergleich zu experimentellen Daten', fontsize=14, y=1.02)
     plt.tight_layout()
 
     return fig
@@ -286,7 +327,7 @@ def main():
     freq_exp, spl_exp = read_experimental_data(exp_file)
 
     # Analysiere verschiedene FFT-Auflösungen
-    resolution_fig = analyze_fft_resolution(time, pressure)
+    resolution_fig = analyze_fft_resolution(time, pressure, freq_exp, spl_exp)
     resolution_fig.savefig('fft_resolution_analysis.png', dpi=150, bbox_inches='tight')
     print(f"\nAuflösungsanalyse gespeichert in: fft_resolution_analysis.png")
 

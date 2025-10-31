@@ -1,0 +1,28 @@
+Baseline (Welch)
+       overall: RMSE=  4.92 dB, MAE=  3.86 dB, Mean= -2.70 dB, Min=-50.66 dB, Max= 12.75 dB
+       0-20 Hz: RMSE= 15.57 dB, MAE=  8.86 dB, Mean= -8.04 dB, Min=-50.66 dB, Max=  4.36 dB
+     20-100 Hz: RMSE=  6.45 dB, MAE=  5.63 dB, Mean=  2.60 dB, Min= -9.86 dB, Max= 12.75 dB
+    100-500 Hz: RMSE=  3.91 dB, MAE=  3.43 dB, Mean= -2.65 dB, Min= -7.94 dB, Max=  6.97 dB
+   500-1000 Hz: RMSE=  4.41 dB, MAE=  3.72 dB, Mean= -3.35 dB, Min= -9.82 dB, Max=  4.28 dB
+
+Nach globalem Gain
+       overall: RMSE=  5.08 dB, MAE=  4.04 dB, Mean= -2.98 dB, Min=-50.95 dB, Max= 12.46 dB
+       0-20 Hz: RMSE= 15.72 dB, MAE=  9.03 dB, Mean= -8.32 dB, Min=-50.95 dB, Max=  4.07 dB
+     20-100 Hz: RMSE=  6.34 dB, MAE=  5.52 dB, Mean=  2.31 dB, Min=-10.15 dB, Max= 12.46 dB
+    100-500 Hz: RMSE=  4.11 dB, MAE=  3.64 dB, Mean= -2.93 dB, Min= -8.23 dB, Max=  6.69 dB
+   500-1000 Hz: RMSE=  4.63 dB, MAE=  3.92 dB, Mean= -3.64 dB, Min=-10.10 dB, Max=  4.00 dB
+
++ Glättung 60 Hz
+       overall: RMSE=  3.43 dB, MAE=  2.11 dB, Mean=  0.44 dB, Min=-24.08 dB, Max= 19.72 dB
+       0-20 Hz: RMSE= 14.73 dB, MAE= 13.80 dB, Mean= 10.19 dB, Min=-24.08 dB, Max= 19.72 dB
+     20-100 Hz: RMSE=  7.37 dB, MAE=  6.42 dB, Mean=  2.67 dB, Min=-11.16 dB, Max= 14.68 dB
+    100-500 Hz: RMSE=  1.85 dB, MAE=  1.45 dB, Mean=  0.06 dB, Min= -6.23 dB, Max=  5.70 dB
+   500-1000 Hz: RMSE=  1.82 dB, MAE=  1.49 dB, Mean=  0.01 dB, Min= -4.74 dB, Max=  5.10 dB
+
++ Glättung 25 Hz
+       overall: RMSE=  2.36 dB, MAE=  1.47 dB, Mean=  0.12 dB, Min=-16.89 dB, Max= 19.76 dB
+       0-20 Hz: RMSE= 11.32 dB, MAE=  9.29 dB, Mean=  6.53 dB, Min=-16.89 dB, Max= 19.76 dB
+     20-100 Hz: RMSE=  3.51 dB, MAE=  2.89 dB, Mean= -0.21 dB, Min= -7.76 dB, Max=  7.89 dB
+    100-500 Hz: RMSE=  1.52 dB, MAE=  1.17 dB, Mean=  0.06 dB, Min= -6.74 dB, Max=  4.37 dB
+   500-1000 Hz: RMSE=  1.43 dB, MAE=  1.16 dB, Mean= -0.02 dB, Min= -3.98 dB, Max=  4.03 dB
+
